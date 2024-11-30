@@ -1,10 +1,14 @@
 const express = require("express");
+const path = require("path");
 const time = require("./time");
 const morgan = require("morgan");
 const app = express();
 const cors = require('cors')
 
 app.use(cors())
+
+// Serve static files from the 'dist' folder
+app.use(express.static(path.join(__dirname, "dist")));
 
 morgan.token("req-body", (req) => {
   // Log the body for POST
@@ -48,7 +52,7 @@ const timestamp = time.getFormattedTimestamp();
 
 app.get("/", (req, res) => {
   try {
-    return res.status(200).send("<h1>Hello World!</h1>");
+    return res.sendFile(path.join(__dirname, "dist", "index.html"));
   } catch (error) {
     // If an error occurs, send a 500 status code (Internal Server Error)
     console.error(error);
