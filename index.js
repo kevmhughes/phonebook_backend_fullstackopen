@@ -52,7 +52,7 @@ const timestamp = time.getFormattedTimestamp();
 
 app.get("/", (req, res) => {
   try {
-    return res.status(200).send("<h1>Hello World!</h1>");
+    return res.sendFile(path.join(__dirname, "dist", "index.html"));
   } catch (error) {
     // If an error occurs, send a 500 status code (Internal Server Error)
     console.error(error);
