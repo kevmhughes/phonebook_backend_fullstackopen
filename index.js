@@ -1,10 +1,14 @@
 const express = require("express");
+const path = require("path");
 const time = require("./time");
 const morgan = require("morgan");
 const app = express();
 const cors = require('cors')
 
 app.use(cors())
+
+// Serve static files from the 'dist' folder
+app.use(express.static(path.join(__dirname, "dist")));
 
 morgan.token("req-body", (req) => {
   // Log the body for POST
