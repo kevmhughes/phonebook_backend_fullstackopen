@@ -72,19 +72,21 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/persons", async (req, res) => {
-  try {
-    const contacts = await Contact.find({});
-    return res.json(contacts);
-  } catch (error) {
-    // If an error occurs, send a 500 status code (Internal Server Error)
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while fetching the data" });
-  }
-});
+    Contact.find({})
+    .then((contact) => {
+      if (contact) {
+        return res.status(200).json(contact);
+      } else {
+        return res.status(404).json({ error: "No contacts found" });
+      }
+    })
+    .catch((error) => {
+      console.error(error);  // Log the error to the console
+      return res.status(500).json({ error: "An error occurred" });
+    });
+  });
 
-app.get("/api/info", (req, res) => {
+app.get("/api/info", (req, res,) => {
   try {
     if (persons.length === 1) {
       return res.status(200).send(`
@@ -108,8 +110,8 @@ app.get("/api/info", (req, res) => {
 app.get("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
 
-  Contact.findById(id).
-  then((contact) => {
+  Contact.findById(id)
+  .then((contact) => {
     if (contact) {
       return res.status(200).json(contact);
     } else {
