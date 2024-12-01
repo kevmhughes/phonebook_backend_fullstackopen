@@ -12,11 +12,6 @@ dotenv.config();
 
 mongoose.set("strictQuery", false);
 
-app.use(cors());
-
-// Serve static files from the 'dist' folder
-app.use(express.static(path.join(__dirname, "dist")));
-
 morgan.token("req-body", (req) => {
   // Log the body for POST
   if (req.method === "POST") {
@@ -25,12 +20,26 @@ morgan.token("req-body", (req) => {
   return "";
 });
 
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return res.status(400).json({ error: 'malformatted id' })
+  } 
+  next(error)
+}
+
+// middleware
+// Serve static files from the 'dist' folder
+app.use(express.static(path.join(__dirname, "dist")));
+app.use(express.json());
+// express error handler must be the last middleware
+app.use(cors());
 // Use morgan with custom format to log method, url, headers, and req body
 app.use(
   morgan(":method :url :status :res[content-length] :req[headers] :req-body")
 );
-
-app.use(express.json());
+app.use(errorHandler)
 
 let persons = [
   {
@@ -96,46 +105,33 @@ app.get("/api/info", (req, res) => {
   }
 });
 
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
-  Contact.findById(id).then((contact) => {
-    res.json(contact);
-  });
-  /*   const personData = persons.find((person) => person.id === id);
-  try {
-    // Check if the person was found
-    if (!personData) {
-      return res.status(404).json({ error: "Person not found" });
-    }
-    res.status(200).json(personData);
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while fetching the data" });
-  } */
-});
 
-app.delete("/api/persons/:id", (req, res) => {
+  Contact.findById(id).
+  then((contact) => {
+    if (contact) {
+      return res.status(200).json(contact);
+    } else {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+  })
+  .catch(error => next(error))
+  });
+
+app.delete("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
-  Contact.deleteOne({ _id: id }).then((contact) => {
-    res.json(`the contact with id ${id} has been deleted successfully`);
-  });
-  /*   try {
-    const personIndex = persons.findIndex((person) => person.id === id);
-    // If person with that ID is not found
-    if (personIndex === -1) {
-      return res.status(404).json({ error: `Person with id ${id} not found` });
-    }
-    persons = persons.filter((person) => person.id !== id);
 
-    res.status(204).json({ message: `Person with id ${id} deleted` });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while deleting the data" });
-  } */
+  Contact.findByIdAndDelete(id)
+  .then((contact) => {
+    if (!contact) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+    res.status(200).json({
+      message: `The contact with ID ${id} has been deleted successfully`,
+    });
+  })
+  .catch(error => next(error))
 });
 
 app.post("/api/persons", (req, res) => {
@@ -189,8 +185,8 @@ async function connectDB() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log("Connected to the database");
-  } catch (err) {
-    console.error("Database connection error:", err.message);
+  } catch (error) {
+    console.error("Database connection error:", error.message);
   }
 }
 
