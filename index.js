@@ -1,11 +1,18 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const path = require("path");
 const time = require("./time");
 const morgan = require("morgan");
 const app = express();
-const cors = require('cors')
+const cors = require("cors");
+const Contact = require("./models/contact");
+const dotenv = require("dotenv");
 
-app.use(cors())
+dotenv.config();
+
+mongoose.set("strictQuery", false);
+
+app.use(cors());
 
 // Serve static files from the 'dist' folder
 app.use(express.static(path.join(__dirname, "dist")));
@@ -41,11 +48,6 @@ let persons = [
     name: "Dan Abramov",
     number: "12-43-234345",
   },
-  {
-    id: "4",
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
 ];
 
 const timestamp = time.getFormattedTimestamp();
@@ -60,9 +62,10 @@ app.get("/", (req, res) => {
   }
 });
 
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", async (req, res) => {
   try {
-    return res.status(200).json(persons);
+    const contacts = await Contact.find({});
+    return res.json(contacts);
   } catch (error) {
     // If an error occurs, send a 500 status code (Internal Server Error)
     console.error(error);
@@ -95,7 +98,10 @@ app.get("/api/info", (req, res) => {
 
 app.get("/api/persons/:id", (req, res) => {
   const id = req.params.id;
-  const personData = persons.find((person) => person.id === id);
+  Contact.findById(id).then((contact) => {
+    res.json(contact);
+  });
+  /*   const personData = persons.find((person) => person.id === id);
   try {
     // Check if the person was found
     if (!personData) {
@@ -107,12 +113,15 @@ app.get("/api/persons/:id", (req, res) => {
     return res
       .status(500)
       .json({ error: "An error occurred while fetching the data" });
-  }
+  } */
 });
 
 app.delete("/api/persons/:id", (req, res) => {
-  try {
-    const id = req.params.id;
+  const id = req.params.id;
+  Contact.deleteOne({ _id: id }).then((contact) => {
+    res.json(`the contact with id ${id} has been deleted successfully`);
+  });
+  /*   try {
     const personIndex = persons.findIndex((person) => person.id === id);
     // If person with that ID is not found
     if (personIndex === -1) {
@@ -126,41 +135,47 @@ app.delete("/api/persons/:id", (req, res) => {
     return res
       .status(500)
       .json({ error: "An error occurred while deleting the data" });
-  }
+  } */
 });
 
 app.post("/api/persons", (req, res) => {
   try {
     const { name, number } = req.body;
+
     // Basic validation: Ensure name and number are provided
     if (!name || !number) {
       return res
         .status(400)
         .json({ error: "Both name and number are required" });
     }
-    const nameExists = persons.find((person) => person.name === name);
 
-    if (nameExists) {
+    /*  const nameExists = persons.find((person) => person.name === name); */
+
+    /*   if (nameExists) {
       return res.status(409).json({
         error: "Sorry, this contact name is already in the phonebook.",
       });
-    }
+    } */
 
     // Generate a unique ID
-    const id = `${Math.floor(Math.random() * 1000000)}-${persons.length}`;
+    const id = `${Math.floor(Math.random() * 1000000)}-${
+      persons.length
+    }`.toString();
 
-    const newPerson = {
+    const newPerson = new Contact({
       id: id,
-      name,
-      number,
-    };
+      name: name,
+      number: number,
+    });
 
-    persons.push(newPerson);
+    newPerson.save().then((savedPerson) => {
+      return res.json(savedPerson);
+    });
 
-    return res.status(201).json({
+    /*    return res.status(201).json({
       message: `${name} has been added to the phonebook`,
       person: newPerson,
-    });
+    }); */
   } catch (error) {
     console.error(error);
     return res
@@ -168,6 +183,19 @@ app.post("/api/persons", (req, res) => {
       .json({ error: "An error occurred while posting the data" });
   }
 });
+
+// Function to connect to the database
+async function connectDB() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("Connected to the database");
+  } catch (err) {
+    console.error("Database connection error:", err.message);
+  }
+}
+
+// Call the connectDB function and catch any errors
+connectDB().catch((err) => console.log(err));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
