@@ -21,13 +21,13 @@ morgan.token("req-body", (req) => {
 });
 
 const errorHandler = (error, req, res, next) => {
-  console.error(error.message)
+  console.error(error.message);
 
-  if (error.name === 'CastError') {
-    return res.status(400).json({ error: 'malformatted id' })
-  } 
-  next(error)
-}
+  if (error.name === "CastError") {
+    return res.status(400).json({ error: "malformatted id" });
+  }
+  next(error);
+};
 
 // middleware
 // Serve static files from the 'dist' folder
@@ -39,25 +39,7 @@ app.use(cors());
 app.use(
   morgan(":method :url :status :res[content-length] :req[headers] :req-body")
 );
-app.use(errorHandler)
-
-let persons = [
-  {
-    id: "1",
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: "2",
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: "3",
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-];
+app.use(errorHandler);
 
 const timestamp = time.getFormattedTimestamp();
 
@@ -71,22 +53,22 @@ app.get("/", (req, res) => {
   }
 });
 
-app.get("/api/persons", async (req, res) => {
-    Contact.find({})
-    .then((contact) => {
-      if (contact) {
-        return res.status(200).json(contact);
+app.get("/api/persons", (req, res) => {
+  Contact.find({})
+    .then((contacts) => {
+      if (contacts) {
+        return res.status(200).json(contacts);
       } else {
         return res.status(404).json({ error: "No contacts found" });
       }
     })
     .catch((error) => {
-      console.error(error);  // Log the error to the console
+      console.error(error); // Log the error to the console
       return res.status(500).json({ error: "An error occurred" });
     });
-  });
+});
 
-app.get("/api/info", (req, res,) => {
+app.get("/api/info", (req, res) => {
   try {
     if (persons.length === 1) {
       return res.status(200).send(`
@@ -111,75 +93,60 @@ app.get("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
 
   Contact.findById(id)
-  .then((contact) => {
-    if (contact) {
-      return res.status(200).json(contact);
-    } else {
-      return res.status(404).json({ error: "Contact not found" });
-    }
-  })
-  .catch(error => next(error))
-  });
+    .then((contact) => {
+      if (contact) {
+        return res.status(200).json(contact);
+      } else {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+    })
+    .catch((error) => next(error));
+});
 
 app.delete("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
 
   Contact.findByIdAndDelete(id)
-  .then((contact) => {
-    if (!contact) {
-      return res.status(404).json({ error: "Contact not found" });
-    }
-    res.status(200).json({
-      message: `The contact with ID ${id} has been deleted successfully`,
-    });
-  })
-  .catch(error => next(error))
+    .then((contact) => {
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.status(204).json({
+        message: `The contact with ID ${id} has been deleted successfully`,
+      });
+    })
+    .catch((error) => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
-  try {
-    const { name, number } = req.body;
-
-    // Basic validation: Ensure name and number are provided
-    if (!name || !number) {
-      return res
-        .status(400)
-        .json({ error: "Both name and number are required" });
-    }
-
-    /*  const nameExists = persons.find((person) => person.name === name); */
-
-    /*   if (nameExists) {
-      return res.status(409).json({
-        error: "Sorry, this contact name is already in the phonebook.",
-      });
-    } */
-
-    // Generate a unique ID
-    const id = `${Math.floor(Math.random() * 1000000)}-${
-      persons.length
-    }`.toString();
-
-    const newPerson = new Contact({
-      id: id,
-      name: name,
-      number: number,
-    });
-
-    newPerson.save().then((savedPerson) => {
-      return res.json(savedPerson);
-    });
-
-    /*    return res.status(201).json({
-      message: `${name} has been added to the phonebook`,
-      person: newPerson,
-    }); */
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while posting the data" });
+app.post("/api/persons", (req, res, next) => {
+  const { name, number } = req.body;
+  // Basic validation: Ensure name and number are provided
+  if (!name || !number) {
+    return res.status(400).json({ error: "Both name and number are required" });
   }
+
+  const newContact = new Contact({
+    name,
+    number,
+  });
+
+  newContact
+    .save()
+    .then((newContact) => {
+      res.status(200).json(newContact);
+    })
+    .catch((error) => next(error));
+});
+
+app.put("/api/persons/:id", (req, res, next) => {
+  const id = req.params.id;
+  const { number } = req.body;
+
+  Contact.findByIdAndUpdate(id, { number: number }, { new: true })
+    .then((updatedContact) => {
+      res.json(updatedContact);
+    })
+    .catch((error) => next(error));
 });
 
 // Function to connect to the database
