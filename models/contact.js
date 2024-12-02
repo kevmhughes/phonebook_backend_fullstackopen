@@ -3,8 +3,12 @@ const { Schema, model } = require("mongoose");
 
 const contactSchema = new Schema({
     id: String,
-    name: String,
-    number: String,
+    name: {
+      type: String,
+      minLength: 3,
+      required: true
+    },
+    number: String
 })
 
 contactSchema.set('toJSON', {

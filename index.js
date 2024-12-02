@@ -25,6 +25,8 @@ const errorHandler = (error, req, res, next) => {
 
   if (error.name === "CastError") {
     return res.status(400).json({ error: "malformatted id" });
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).json({error: error.message})
   }
   next(error);
 };
@@ -39,7 +41,6 @@ app.use(cors());
 app.use(
   morgan(":method :url :status :res[content-length] :req[headers] :req-body")
 );
-app.use(errorHandler);
 
 const timestamp = time.getFormattedTimestamp();
 
@@ -131,12 +132,14 @@ app.put("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
   const { number } = req.body;
 
-  Contact.findByIdAndUpdate(id, { number: number }, { new: true })
+  Contact.findByIdAndUpdate(id, { number: number }, { new: true/* , runValidators: true, context: 'query'  */})
     .then((updatedContact) => {
       res.json(updatedContact);
     })
     .catch((error) => next(error));
 });
+
+app.use(errorHandler);
 
 // Function to connect to the database
 async function connectDB() {
