@@ -68,25 +68,14 @@ app.get("/api/persons", (req, res) => {
     });
 });
 
-app.get("/api/info", (req, res) => {
-  try {
-    if (persons.length === 1) {
-      return res.status(200).send(`
-        <h1>Phonebook has info for ${persons.length} person</h1>
-        <p>${timestamp}</p>`);
-    }
-
-    if (persons.length > 1) {
-      return res.status(200).send(`
-        <h1>Phonebook has info for ${persons.length} persons</h1>
-        <p>${timestamp}</p>`);
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while fetching the information" });
-  }
+app.get("/api/info", (req, res, next) => {
+  Contact.find({})
+  .then((results) => {
+    return res.status(200).send(`
+      <h1>There are ${results.length} contacts in the phonebook</h1>
+      <p>${timestamp}</p>`);
+  })
+  .catch((error) => next(error));
 });
 
 app.get("/api/persons/:id", (req, res, next) => {
