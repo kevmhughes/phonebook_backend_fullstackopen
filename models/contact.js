@@ -1,12 +1,12 @@
 // contact schema
-const { Schema, model } = require("mongoose");
+const { Schema, model } = require('mongoose')
 
 // Capitalize the first letter of each word in a string
 function capitalizeWords(str) {
   return str
     .replace(/\b\w/g, (char) => char.toUpperCase())
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 const contactSchema = new Schema({
@@ -27,21 +27,21 @@ const contactSchema = new Schema({
     validate: {
       validator: function (v) {
         // The regex matches phone numbers with 2 or 3 digits, a hyphen, and 6 to 9 digits after the hyphen.
-        return /^\d{2,3}-\d{6,9}$/.test(v);
+        return /^\d{2,3}-\d{6,9}$/.test(v)
       },
       message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
-});
+})
 
-contactSchema.set("toJSON", {
+contactSchema.set('toJSON', {
   transform: (document, returnedObject) => {
-    returnedObject.id = returnedObject._id.toString();
-    delete returnedObject._id;
-    delete returnedObject.__v;
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject.__v
   },
-});
+})
 
-const Contact = model("Contact", contactSchema);
+const Contact = model('Contact', contactSchema)
 
-module.exports = Contact;
+module.exports = Contact
