@@ -14,6 +14,7 @@ const contactSchema = new Schema({
   name: {
     type: String,
     minLength: 3,
+    maxLength: 20,
     required: true,
     match: /^[A-Za-z\s]+$/, // Only letters and spaces are allowed
     set: capitalizeWords, // Automatically capitalize first letter of each word before saving
@@ -21,6 +22,7 @@ const contactSchema = new Schema({
   number: {
     type: String,
     minLength: 8,
+    maxLength: 13,
     required: true,
     validate: {
       validator: function (v) {
